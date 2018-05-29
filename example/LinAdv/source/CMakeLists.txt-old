@@ -1,0 +1,26 @@
+cmake_minimum_required(VERSION 2.6)
+# project name and languages 
+project(JAUMIN_example CXX C Fortran)
+
+if(NOT JAUMIN)
+  set(JAUMIN /usr/local/jaumin/1.8.3-1823)
+endif()
+
+# 在include配置文件CMakeLists.config之前，用户可以
+# 硬性设置如下两个参数的值
+set(CDIM 3)
+set(CREL opt)
+# 如果不设置将使用缺省值 CDIM = 2, CREL = dbg
+# 更为方便的是在cmake的命令行参数中指定，比如：
+# cmake -DCDIM=3 -DCREL=opt ../source/
+include(${JAUMIN}/config/CMakeLists.config)
+
+file(GLOB_RECURSE src_files ./*.cpp ./*.C ./fortran/${CDIM}d/*.f initsetvalue.f)
+add_executable(main${CDIM}d ${src_files})
+target_link_libraries(main${CDIM}d ${LIBJAUMIN} ${LIBJAUMINDEPEND})
+
+# 指定此目标的依赖: 只要jaumin库文件或者第三方库文件有更新, 
+# 在example/xxx/build下make就能够链接新的库文件. 
+set_target_properties(main${CDIM}d
+  PROPERTIES LINK_DEPENDS
+  "${JAUMIN_LIBRARIES};${THIRDLIB_LIBRARIES}")

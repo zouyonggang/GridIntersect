@@ -1,0 +1,73 @@
+// 
+// 文件名:	linadv-3d.input
+// 软件包:	JAUMIN application
+// 版权  :	(c) 2004-2010 北京应用物理与计算数学研究所
+// 版本号:	$Revision: 96 $
+// 修改  :	$Date: 2011-05-30 10:29:13 +0800 (一, 2011-05-30) $
+// 描述  :	输入文件:LinAdv程序三维计算示例输入文件.
+//
+
+Main{
+   // 日志文件参数.
+   log_file_name               = "3d-Hex.log"         // 日志文件名称.
+   log_all_nodes               = TRUE // TRUE表示每个进程生成一个日志文件.
+
+   // 可视化数据场的输出参数.
+   javis_dump_interval         = 10                   // 输出时间步的间隔. 0表示关闭.
+   javis_dump_dirname          = "javis_test3d_Hex"   // 存储数据场的目录名.
+   javis_number_procs_per_file = 1                    // 多少个进程共享一个输出文件.
+
+   // 重启动控制参数.
+   restart_dump_interval       = 10                    // 重启动时间步的间隔. 0表示关闭.
+   restart_dump_dirname        = "restart_test3d-Hex" // 存储重启动数据场的目录名.
+}
+
+LinAdv {
+   constant_x_velocity = 0.1	
+}
+
+GridGeometry {
+
+   MeshImportationParameter{ 
+      //file_name = "block_6x2x2.k"
+      //file_name = "bar-tet-498.k"
+      //file_name = "block_50x10x2.k"
+      //file_name = "contact5.k"
+      //file_name = "block_500x100x2.k"
+      //file_name = "block_200x40x40.k"
+      //file_name = "test3D_1_4.k"
+      file_name = "sub_grid_out.k"
+      //file_name = "result1_out.k"
+      refine_times = 0
+   }
+}
+
+GridTopology {
+  ghost_type = "FACE"
+}
+
+HierarchyTimeIntegrator{
+
+   // 时间步进控制参数
+   start_time           = 0.e0       // 模拟的初始时刻.
+   end_time             = 1000.0      // 模拟的终止时刻.
+   max_integrator_steps = 3000       // 模拟的最大时间步数.
+   max_dt               = 1.0        // 最大时间步步长.
+   grow_dt              = 1.2        // 连续两个时间步长的最大放大倍数.
+
+   GriddingAlgorithm{
+     patch_size = 500000              // 网格片大小, 即包含的网格单元数目.
+     num_patch_per_thread = 1
+   }
+}
+
+JaVisDataWriter{
+}
+
+TimerManager{
+   timer_list   = "*::*::*"
+   print_summed = TRUE
+   print_max    = TRUE
+   print_threshold = 0.0 
+}
+
