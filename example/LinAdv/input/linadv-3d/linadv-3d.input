@@ -31,11 +31,6 @@ GridGeometry {
    MeshImportationParameter{ 
       //file_name = "block_6x2x2.k"
       //file_name = "bar-tet-498.k"
-      //file_name = "block_50x10x2.k"
-      //file_name = "contact5.k"
-      //file_name = "block_500x100x2.k"
-      //file_name = "block_200x40x40.k"
-      //file_name = "test3D_1_4.k"
       file_name = "sub_grid_out.k"
       //file_name = "result1_out.k"
       refine_times = 0
@@ -57,7 +52,7 @@ HierarchyTimeIntegrator{
 
    GriddingAlgorithm{
      patch_size = 500000              // 网格片大小, 即包含的网格单元数目.
-     num_patch_per_thread = 1
+     num_patch_per_thread = 2
    }
 }
 

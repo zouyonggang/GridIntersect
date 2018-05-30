@@ -175,19 +175,16 @@ int main(int argc, char* argv[]) {
 
           int cell_number =
               patch->getNumberOfEntities(hier::EntityUtilities::CELL, 0);
-          //   int cell_number_with_ghost =
-          //       patch->getNumberOfEntities(hier::EntityUtilities::CELL, 1);
+          int cell_number_with_ghost =
+              patch->getNumberOfEntities(hier::EntityUtilities::CELL, 1);
           tbox::pout << "Patch cell entity:" << cell_number << endl;
           int node_number =
               patch->getNumberOfEntities(hier::EntityUtilities::NODE, 0);
-          //   int node_number_with_ghost =
-          //       patch->getNumberOfEntities(hier::EntityUtilities::NODE, 1);
           tbox::Pointer<hier::PatchGeometry<NDIM> > geometry =
               patch->getPatchGeometry();
           tbox::Pointer<pdat::CellData<NDIM, double> > cell_coordinates =
               geometry->getCellCoordinates();
           double* cell_coordinate = cell_coordinates->getPointer();
-          // double cell_coordinate[3] = {0, 0, 0};
           tbox::Pointer<pdat::NodeData<NDIM, double> > node_coordinates =
               geometry->getNodeCoordinates();
           const double* node_coordinate = node_coordinates->getPointer(0);
@@ -203,7 +200,9 @@ int main(int argc, char* argv[]) {
               for (int j = 0; j < NDIM; j++)
                 x_lower_point[j] = node_coordinate[i * NDIM + j];
 
-          //进行点与网格定位
+          //
+          // 点相交测试
+          //
           clock_gettime(CLOCK_MONOTONIC_RAW, &start);
           tbox::Pointer<GridIntersect> intersect = new GridIntersect(patch);
           clock_gettime(CLOCK_MONOTONIC_RAW, &end);
@@ -214,8 +213,13 @@ int main(int argc, char* argv[]) {
 
           //取网格单元坐标作为内部输入测试点
           clock_gettime(CLOCK_MONOTONIC_RAW, &start);
+          int number;
+          if (cell_number > 10000)
+            number = 10000;
+          else
+            number = cell_number;
           vector<int> inside_result =
-              intersect->pointInGrid(cell_coordinate, 10000);
+              intersect->pointInGrid(cell_coordinate, number);
           clock_gettime(CLOCK_MONOTONIC_RAW, &end);
           cout << "\n点定位内部(10000): "
                << end.tv_sec + end.tv_nsec * 1e-9 - start.tv_sec -
@@ -232,25 +236,24 @@ int main(int argc, char* argv[]) {
                       start.tv_nsec * 1e-9
                << " s\n";
 
-          // 取影像区网格单元中心坐标作为外部测试点输入
-          //   double outside_point[3] = {x_lower_point[0] + 1,
-          //   x_lower_point[1],
-          //                              x_lower_point[2]};
+          // 取影像区网格单元中心坐标作为外部测试点输入(需要影像取数据，否则测试结果无效)
           vector<int> outside_result;
           clock_gettime(CLOCK_MONOTONIC_RAW, &start);
+          if (cell_number_with_ghost - cell_number > 10000)
+            number = 10000;
+          else
+            number = cell_number_with_ghost - cell_number;
           outside_result =
-              intersect->pointInGrid(cell_coordinate + cell_number * 3, 100);
+              intersect->pointInGrid(cell_coordinate + cell_number * 3, number);
           clock_gettime(CLOCK_MONOTONIC_RAW, &end);
           cout << "\n点定位外部(100): "
                << end.tv_sec + end.tv_nsec * 1e-9 - start.tv_sec -
                       start.tv_nsec * 1e-9
                << " s\n";
 
-          //进行射线网格相交测试,取上诉外部点作为起点，x轴负方向作为方向
-          //   double points[3] = {outside_point[0], outside_point[1],
-          //                       outside_point[2]};
-          //   double direction[3] = {-1, 0, 0};
-          //   double intersection_coordinates[2 * 3];
+          //
+          // 射线相交测试
+          //
           double points[100000 * 3] = {0};
           double direction[100000 * 3];
           double intersection_coordinates[100000 * 3];
@@ -279,7 +282,17 @@ int main(int argc, char* argv[]) {
           intersect->gridIntersectGrid(source_patch, intersect_number,
                                        grid_intersect_result);
           clock_gettime(CLOCK_MONOTONIC_RAW, &end);
-          cout << "\n网格相交: "
+          cout << "\n整个网格相交: "
+               << end.tv_sec + end.tv_nsec * 1e-9 - start.tv_sec -
+                      start.tv_nsec * 1e-9
+               << " s\n";
+
+          int focused_cell_index = 0;
+          clock_gettime(CLOCK_MONOTONIC_RAW, &start);
+          std::vector<int> focused_intersect_index =
+              intersect->gridIntersectGrid(source_patch, focused_cell_index);
+          clock_gettime(CLOCK_MONOTONIC_RAW, &end);
+          cout << "\n指定网格单元相交: "
                << end.tv_sec + end.tv_nsec * 1e-9 - start.tv_sec -
                       start.tv_nsec * 1e-9
                << " s\n";
@@ -306,14 +319,23 @@ int main(int argc, char* argv[]) {
                        << intersection_coordinates[i * 3 + 2];
             tbox::pout << endl;
           }
-          tbox::pout << endl << "网格相交:" << endl;
-          tbox::pout << "相交单元数:" << intersect_number << endl
-                     << "交点索引号：";
+          tbox::pout << endl << "整体网格相交:" << endl;
+          tbox::pout << "  相交单元数:" << intersect_number << endl
+                     << "  交点索引号：";
           for (int i = 0; i < static_cast<int>(grid_intersect_result.size());
                i++) {
             tbox::pout << grid_intersect_result[i] << ",";
           }
+          tbox::pout << endl << "指定网格单元相交:" << endl;
+          tbox::pout << "  目的网格编号：" << focused_cell_index
+                     << ": 相交单元数:" << focused_intersect_index.size()
+                     << " 索引号:";
+          for (int j = 0; j < static_cast<int>(focused_intersect_index.size());
+               j++) {
+            tbox::pout << focused_intersect_index[j] << " ";
+          }
           tbox::pout << endl;
+
         }  // end patch
       }    // end level
     }      // end test

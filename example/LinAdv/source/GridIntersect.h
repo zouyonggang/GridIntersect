@@ -14,7 +14,7 @@ class GridIntersectImpl;
  * @brief  GridIntersect
  * 该模块实现三个功能：1.查询输入点是否在输入网格内，如果在输出点所在网格单元
  * 2.给定网格外射线与网格，输出射线与网格外表面相加网格单元以及交点坐标
- * 3.给定源数据网格和目标单元网格，输出两个网格相交的源单元个数，以及源单元在网格片中的索引号
+ * 3.给定源数据网格和目的单元网格，输出两个网格相交的源单元个数，以及源单元在网格片中的索引号
  *
  */
 
@@ -65,10 +65,17 @@ public:
   void gridIntersectGrid(tbox::Pointer<hier::Patch<3>>& dest_patch,
                          int& intersect_num, std::vector<int>& intersect_index);
 
-  void gridIntersectGrid(
-      tbox::Pointer<hier::Patch<3>>& dest_patch,
-      std::vector<int>& focused_cells_index,
-      std::vector<std::vector<int>>& focused_intersect_index);
+  /**
+   * @brief
+   * 输入目的网格片，以及指定单元索引号，求解与该网格单元相交的源网格单元索引
+   *
+   * @param dest_patch 输入参数，目的网格片
+   * @param focused_cell_index 输入参数，网格单元所以
+   *
+   * @return std::vector<int> 输出参数，与输入网格单元相交的源网格单元索引集合
+   */
+  std::vector<int> gridIntersectGrid(tbox::Pointer<hier::Patch<3>>& dest_patch,
+                                     int focused_cell_index);
 
 private:
   boost::shared_ptr<GridIntersectImpl> impl_;

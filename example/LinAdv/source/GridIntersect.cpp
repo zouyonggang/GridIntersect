@@ -482,8 +482,6 @@ public:
             double face_nodes_coord[face_nodes.size() * 3];
             for (int nnode = 0; nnode < static_cast<int>(face_nodes.size());
                  nnode++) {
-              // std::unordered_map<int, NodeDescriptor>::iterator iter =
-              // patch_nodes_.find(face_nodes[nnode]);
               const hier::DoubleVector<3>& node_ref =
                   patch_nodes_[face_nodes[nnode]]->coord;
               face_nodes_coord[nnode * 3] = node_ref[0];
@@ -580,21 +578,21 @@ public:
   }
 
   /**
-   * @brief 根据输入目标网格单元索引，计算出与之相交源网格单元
+   * @brief 根据输入目的网格单元索引，计算出与之相交源网格单元
    *
-   * @param dest_patch 输入参数，目标网格
-   * @param focused_cells_index 输入参数，目标网格单元索引集合
-   * @param focused_intersect_index 输出参数，目标网格单元相交的源网格单元索引
-   * @param intersect_index 输出参数，整个目标网格网格单元相交的源网格单元索引
+   * @param dest_patch 输入参数，目的网格
+   * @param focused_cells_index 输入参数，目的网格单元索引集合
+   * @param focused_intersect_index 输出参数，目的网格单元相交的源网格单元索引
+   * @param intersect_index 输出参数，整个目的网格网格单元相交的源网格单元索引
    * @param tags 输入参数，标识符：
-   *   0：求解所有目标网格单元与源网格相交，此时focused_cells_index，
+   *   0：求解所有目的网格单元与源网格相交，此时focused_cells_index，
    *      focused_intersect_index无效，intersect_index有效
-   *   1：求解指定目标网格指定网格单元与源网格相交，此时focused_cell_index，
+   *   1：求解指定目的网格指定网格单元与源网格相交，此时focused_cell_index，
    *      focused_intersect_index有效，intersect_index无效
    *
    * @note
    * focused_intersect_index相当于一个二维数据，第一维对应focused_cells_index中
-   * 的每一个目标网格单元，第二维表示与第一维中目标网格网格单元相交的源网格单元索引
+   * 的每一个目的网格单元，第二维表示与第一维中目的网格网格单元相交的源网格单元索引
    */
   void gridIntersectGrid(
       tbox::Pointer<hier::Patch<3> >& dest_patch,
@@ -607,7 +605,7 @@ public:
         dest_patch->getPatchTopology();
     tbox::Pointer<hier::PatchGeometry<3> > patch_geometry =
         dest_patch->getPatchGeometry();
-    //如果是获取整个网格相交结果，把目标网格所有网格单元索引添加到查询网格单元中
+    //如果是获取整个网格相交结果，把目的网格所有网格单元索引添加到查询网格单元中
     if (tags == 0) {
       focused_cells_index.resize(0);
       for (int i = 0; i < cell_number; i++) focused_cells_index.push_back(i);
@@ -623,9 +621,9 @@ public:
     tbox::Array<int> cell_adj_nodes_indices;
     topology->getCellAdjacencyNodes(cell_adj_nodes_extent,
                                     cell_adj_nodes_indices);
-    for (std::vector<int>::iterator cell_iter = focused_cells_index.begin();
-         cell_iter != focused_cells_index.end(); cell_iter++) {
-      int cell_index = *cell_iter;
+    int focused_cells_size = focused_cells_index.size();
+    for (int cell = 0; cell < focused_cells_size; cell++) {
+      int cell_index = focused_cells_index[cell];
 #ifdef DEBUG_CHECK_ASSERTION
       assert(cell_index >= 0 && cell_index < cell_number);
 #endif
@@ -703,13 +701,14 @@ void GridIntersect::gridIntersectGrid(
   intersect_num = intersect_indexs.size();
 }
 
-void GridIntersect::gridIntersectGrid(
-    tbox::Pointer<hier::Patch<3> >& dest_patch,
-    std::vector<int>& focused_cells_index,
-    std::vector<std::vector<int> >& focused_intersect_index) {
+std::vector<int> GridIntersect::gridIntersectGrid(
+    tbox::Pointer<hier::Patch<3> >& dest_patch, int focused_cell_index) {
   std::set<int> intersect_indexs;
+  std::vector<int> focused_cells_index(1, focused_cell_index);
+  std::vector<std::vector<int> > focused_intersects_index;
   impl_->gridIntersectGrid(dest_patch, focused_cells_index,
-                           focused_intersect_index, intersect_indexs, 1);
+                           focused_intersects_index, intersect_indexs, 1);
+  return focused_intersects_index[0];
 }
 
 #endif  //  GRID_INTERSECT_CPP
