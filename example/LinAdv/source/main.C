@@ -165,11 +165,12 @@ int main(int argc, char* argv[]) {
         tbox::pout << "当前网格层：" << level_id << endl;
         tbox::Pointer<hier::PatchLevel<NDIM> > patch_level =
             patch_hierarchy->getPatchLevel(level_id);
-
+        tbox::Pointer<hier::Patch<NDIM> > source_patch;
         for (hier::PatchLevel<NDIM>::Iterator p(patch_level); p; p++) {
           tbox::pout << "\n\n++++++++++++++++++++++++++++++++++++++++++++"
                      << endl;
           tbox::Pointer<hier::Patch<NDIM> > patch = patch_level->getPatch(p());
+          if (patch->getIndex() == 0) source_patch = patch;
           tbox::pout << "patch index:" << patch->getIndex() << endl;
 
           int cell_number =
@@ -269,6 +270,23 @@ int main(int argc, char* argv[]) {
                       start.tv_nsec * 1e-9
                << " s\n";
 
+          //
+          // 网格相交测试
+          //
+          std::vector<int> grid_intersect_result;
+          int intersect_number;
+          clock_gettime(CLOCK_MONOTONIC_RAW, &start);
+          intersect->gridIntersectGrid(source_patch, intersect_number,
+                                       grid_intersect_result);
+          clock_gettime(CLOCK_MONOTONIC_RAW, &end);
+          cout << "\n网格相交: "
+               << end.tv_sec + end.tv_nsec * 1e-9 - start.tv_sec -
+                      start.tv_nsec * 1e-9
+               << " s\n";
+
+          //
+          // 输出结果
+          //
           tbox::pout << "inside相交网格编号为:";
           for (int i = 0; i < static_cast<int>(inside_result.size()); i++)
             tbox::pout << inside_result[i] << " ";
@@ -288,7 +306,14 @@ int main(int argc, char* argv[]) {
                        << intersection_coordinates[i * 3 + 2];
             tbox::pout << endl;
           }
-
+          tbox::pout << endl << "网格相交:" << endl;
+          tbox::pout << "相交单元数:" << intersect_number << endl
+                     << "交点索引号：";
+          for (int i = 0; i < static_cast<int>(grid_intersect_result.size());
+               i++) {
+            tbox::pout << grid_intersect_result[i] << ",";
+          }
+          tbox::pout << endl;
         }  // end patch
       }    // end level
     }      // end test

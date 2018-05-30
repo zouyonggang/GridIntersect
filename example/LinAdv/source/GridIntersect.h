@@ -25,7 +25,7 @@ public:
    *
    * @param source_patch 用于点相交、射线相交、网格相交的目的网格
    */
-  GridIntersect(tbox::Pointer<hier::Patch<3> > source_patch);
+  GridIntersect(tbox::Pointer<hier::Patch<3>>& source_patch);
   ~GridIntersect();
 
   /**
@@ -62,8 +62,13 @@ public:
    * @param intersect_num 输出参数，相交源网格单元个数
    * @param intersect_index 输出参数，相交源网格单元索引号
    */
-  void gridIntersectGrid(tbox::Pointer<hier::Patch<3> > dest_patch,
-                         int intersect_num, std::vector<int>& intersect_index);
+  void gridIntersectGrid(tbox::Pointer<hier::Patch<3>>& dest_patch,
+                         int& intersect_num, std::vector<int>& intersect_index);
+
+  void gridIntersectGrid(
+      tbox::Pointer<hier::Patch<3>>& dest_patch,
+      std::vector<int>& focused_cells_index,
+      std::vector<std::vector<int>>& focused_intersect_index);
 
 private:
   boost::shared_ptr<GridIntersectImpl> impl_;
