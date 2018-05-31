@@ -12,8 +12,8 @@
 #include "PatchTopology.h"
 
 #include <assert.h>
-#include <string>
 #include <map>
+#include <string>
 #include <unordered_map>
 
 #include <iostream>
@@ -55,12 +55,10 @@ public:
    *
    * @param source_patch 输入的patch网格片
    */
-  GridIntersectImpl(tbox::Pointer<hier::Patch<3> > source_patch) {
+  GridIntersectImpl(tbox::Pointer<hier::Patch<3> >& source_patch) {
     delta_ = 1.0e-20;
     int node_number =
         source_patch->getNumberOfEntities(hier::EntityUtilities::NODE, 0);
-    int edge_number =
-        source_patch->getNumberOfEntities(hier::EntityUtilities::EDGE, 0);
     int face_number =
         source_patch->getNumberOfEntities(hier::EntityUtilities::FACE, 0);
     int cell_number =
@@ -71,19 +69,19 @@ public:
     // 获取节点,保存节点
     tbox::Pointer<hier::PatchGeometry<3> > patch_geometry =
         source_patch->getPatchGeometry();
-    tbox::Pointer<pdat::NodeData<3, double> > node =
+    tbox::Pointer<pdat::NodeData<3, double> > nodes =
         patch_geometry->getNodeCoordinates();
 #ifdef DEBUG_CHECK_ASSERTION
-    assert(node->getDepth() == 1);
-    assert(node->getGroup() == 3);
+    assert(nodes->getDepth() == 1);
+    assert(nodes->getGroup() == 3);
 #endif
-    const double* nodes_coordinates = node->getPointer(0);
+    const double* nodes_coordinates = nodes->getPointer(0);
     for (int i = 0; i < node_number; i++) {
       NodeDescriptor* node = new NodeDescriptor;
       node->index = i;
       node->coord = hier::DoubleVector<3>(nodes_coordinates[i * 3],
-                                         nodes_coordinates[i * 3 + 1],
-                                         nodes_coordinates[i * 3 + 2]);
+                                          nodes_coordinates[i * 3 + 1],
+                                          nodes_coordinates[i * 3 + 2]);
       patch_nodes_[i] = node;
     }
 
@@ -110,7 +108,7 @@ public:
         }
       }
       // 如果组成该面的点小于3则抛弃该点
-      if (face.nodes.size() < 3) continue;
+      if (static_cast<int>(face.nodes.size()) < 3) continue;
 
       // 获取面周围的体，并判断该面是否为外表面
       for (int j = face_adj_cells_extent[i]; j < face_adj_cells_extent[i + 1];
@@ -151,12 +149,13 @@ public:
 
     // 构造区间树，将patch的所有网格单元bbox存入区间书的叶子节点
     interval_tree_ = new hier::IntervalTree<3>(patch_cells_.size());
-    for (std::unordered_map<int, CellDescriptor>::iterator it = patch_cells_.begin();
+    for (std::unordered_map<int, CellDescriptor>::iterator it =
+             patch_cells_.begin();
          it != patch_cells_.end(); it++) {
       CellDescriptor& cell = it->second;
       // 区间树输入要求列主序
       double bbox[6] = {1.0e16, -1.0e16, 1.0e16, -1.0e16, 1.0e16, -1.0e16};
-      for (int i = 0; i < cell.nodes.size(); i++) {
+      for (int i = 0; i < static_cast<int>(cell.nodes.size()); i++) {
 #ifdef DEBUG_CHECK_ASSERTION
         assert(cell.nodes[i] <= patch_nodes_.size());
 #endif
@@ -172,8 +171,9 @@ public:
   }
 
   ~GridIntersectImpl() {
-    for (std::unordered_map<int, NodeDescriptor*>::iterator iter = 
-          patch_nodes_.begin(); iter != patch_nodes_.end(); iter++) 
+    for (std::unordered_map<int, NodeDescriptor*>::iterator iter =
+             patch_nodes_.begin();
+         iter != patch_nodes_.end(); iter++)
       delete iter->second;
   }
 
@@ -436,7 +436,7 @@ public:
       }
 
       //  第二步，遍历第一步得到的单元集合
-      for (int c = 0; c < bbox_intersect_cells.size(); c++) {
+      for (int c = 0; c < static_cast<int>(bbox_intersect_cells.size()); c++) {
         CellDescriptor cell = patch_cells_[bbox_intersect_cells[c]];
 
         // 采用cross number的方法来判断点是否在网格单元中有一个弊端，
@@ -476,14 +476,13 @@ public:
           double intersection[3];  // 存储交点
           double dist = 1.0e+100;  // 存储距离
           const double direction[3] = {1, 0, 0};
-          for (int f = 0; f < cell.faces.size(); f++) {
+          for (int f = 0; f < static_cast<int>(cell.faces.size()); f++) {
             const std::vector<int>& face_nodes =
                 patch_faces_[cell.faces[f]].nodes;
             double face_nodes_coord[face_nodes.size() * 3];
-            for (int nnode = 0; nnode < face_nodes.size(); nnode++) {
-              // std::unordered_map<int, NodeDescriptor>::iterator iter =
-              // patch_nodes_.find(face_nodes[nnode]);
-              const hier::DoubleVector<3>& node_ref = 
+            for (int nnode = 0; nnode < static_cast<int>(face_nodes.size());
+                 nnode++) {
+              const hier::DoubleVector<3>& node_ref =
                   patch_nodes_[face_nodes[nnode]]->coord;
               face_nodes_coord[nnode * 3] = node_ref[0];
               face_nodes_coord[nnode * 3 + 1] = node_ref[1];
@@ -509,7 +508,7 @@ public:
         if (result_true_sum >= 3) {
           result_temp = cell.index;
           break;
-        } 
+        }
       }  //  end loop cell
       result.push_back(result_temp);
     }  //  end loop points
@@ -553,17 +552,12 @@ public:
         int tag;
         const std::vector<int>& face_nodes = patch_faces_[iter->first].nodes;
         double face_nodes_coord[face_nodes.size() * 3];
-        for (int i = 0; i < face_nodes.size(); i++) {
+        for (int i = 0; i < static_cast<int>(face_nodes.size()); i++) {
 #ifdef DEBUG_CHECK_ASSERTION
           assert(face_nodes[i] <= patch_faces_.size());
 #endif
-          // std::unordered_map<int, NodeDescriptor>::iterator iter =
-          //     patch_nodes_.find(face_nodes[i]);
-          const hier::DoubleVector<3>& node_ref = 
+          const hier::DoubleVector<3>& node_ref =
               patch_nodes_[face_nodes[i]]->coord;
-
-          // const hier::DoubleVector<3>& node_ref =
-          //     patch_nodes_[face_nodes[i]].coord;
           face_nodes_coord[i * 3] = node_ref[0];
           face_nodes_coord[i * 3 + 1] = node_ref[1];
           face_nodes_coord[i * 3 + 2] = node_ref[2];
@@ -583,20 +577,99 @@ public:
     }  //  end loop ray
   }
 
+  /**
+   * @brief 根据输入目的网格单元索引，计算出与之相交源网格单元
+   *
+   * @param dest_patch 输入参数，目的网格
+   * @param focused_cells_index 输入参数，目的网格单元索引集合
+   * @param focused_intersect_index 输出参数，目的网格单元相交的源网格单元索引
+   * @param intersect_index 输出参数，整个目的网格网格单元相交的源网格单元索引
+   * @param tags 输入参数，标识符：
+   *   0：求解所有目的网格单元与源网格相交，此时focused_cells_index，
+   *      focused_intersect_index无效，intersect_index有效
+   *   1：求解指定目的网格指定网格单元与源网格相交，此时focused_cell_index，
+   *      focused_intersect_index有效，intersect_index无效
+   *
+   * @note
+   * focused_intersect_index相当于一个二维数据，第一维对应focused_cells_index中
+   * 的每一个目的网格单元，第二维表示与第一维中目的网格网格单元相交的源网格单元索引
+   */
+  void gridIntersectGrid(
+      tbox::Pointer<hier::Patch<3> >& dest_patch,
+      std::vector<int>& focused_cells_index,
+      std::vector<std::vector<int> >& focused_intersect_index,
+      std::set<int>& intersect_index, int tags) {
+    int node_number = dest_patch->getNumberOfNodes(0);
+    int cell_number = dest_patch->getNumberOfCells(0);
+    tbox::Pointer<hier::PatchTopology<3> > topology =
+        dest_patch->getPatchTopology();
+    tbox::Pointer<hier::PatchGeometry<3> > patch_geometry =
+        dest_patch->getPatchGeometry();
+    //如果是获取整个网格相交结果，把目的网格所有网格单元索引添加到查询网格单元中
+    if (tags == 0) {
+      focused_cells_index.resize(0);
+      for (int i = 0; i < cell_number; i++) focused_cells_index.push_back(i);
+    }
+
+    // 获取节点坐标
+    tbox::Pointer<pdat::NodeData<3, double> > nodes =
+        patch_geometry->getNodeCoordinates();
+    const double* nodes_coordinates = nodes->getPointer(0);
+
+    //获取单元
+    tbox::Array<int> cell_adj_nodes_extent;
+    tbox::Array<int> cell_adj_nodes_indices;
+    topology->getCellAdjacencyNodes(cell_adj_nodes_extent,
+                                    cell_adj_nodes_indices);
+    int focused_cells_size = focused_cells_index.size();
+    for (int cell = 0; cell < focused_cells_size; cell++) {
+      int cell_index = focused_cells_index[cell];
+#ifdef DEBUG_CHECK_ASSERTION
+      assert(cell_index >= 0 && cell_index < cell_number);
+#endif
+
+      //第一步，获取目的网格片每个网格单元的bbox
+      double bbox[6] = {1.0e100,  1.0e100,  1.0e100,
+                        -1.0e100, -1.0e100, -1.0e100};
+      for (int j = cell_adj_nodes_extent[cell_index];
+           j < cell_adj_nodes_extent[cell_index + 1]; j++) {
+        int node_index = cell_adj_nodes_indices[j];
+#ifdef DEBUG_CHECK_ASSERTION
+        assert(node_index < node_number);
+#endif
+        for (int d = 0; d < 3; d++) {
+          bbox[d] = std::min(bbox[d * 2], nodes_coordinates[node_index + d]);
+          bbox[d + 3] =
+              std::max(bbox[d * 2 + 1], nodes_coordinates[node_index + d]);
+        }
+      }
+      //第二步，利用区间树求解与该网格单元bbox相交的源网格单元，并存放结果
+      std::vector<int> bbox_intersect_cells;
+      interval_tree_->getElementsListFromRange(bbox, bbox + 3,
+                                               bbox_intersect_cells);
+      if (tags == 0)
+        for (int i = 0; i < static_cast<int>(bbox_intersect_cells.size()); i++)
+          intersect_index.insert(bbox_intersect_cells[i]);
+      else
+        focused_intersect_index.push_back(bbox_intersect_cells);
+    }
+  }
+
 private:
-  std::unordered_map<int, NodeDescriptor*> patch_nodes_;  //  patch内节点集合
+  std::unordered_map<int,
+                     NodeDescriptor*> patch_nodes_;  //  patch内节点集合
   std::unordered_map<int, FaceDescriptor> patch_faces_;  //  patch内面集合
   std::unordered_map<int, CellDescriptor> patch_cells_;  //  patch内体集合
   std::map<int, int> patch_outer_faces_;  //  patch外表面集合<face-id,cell-id>
   tbox::Pointer<hier::IntervalTree<3> > interval_tree_;  //  存储区间树
-  double delta_ ;  //  用于double数值大小比较中的常数
+  double delta_;  //  用于double数值大小比较中的常数
 };
 
 //
 //  指向GridIntersect的实现
 //
 
-GridIntersect::GridIntersect(tbox::Pointer<hier::Patch<3> > source_patch)
+GridIntersect::GridIntersect(tbox::Pointer<hier::Patch<3> >& source_patch)
     : impl_(new GridIntersectImpl(source_patch)) {}
 
 GridIntersect::~GridIntersect() {}
@@ -611,6 +684,31 @@ void GridIntersect::rayIntersectGrid(const double* start_points,
                                      double* intersection_coordinates) {
   impl_->rayIntersectGrid(start_points, direction, n, ids,
                           intersection_coordinates);
+}
+
+void GridIntersect::gridIntersectGrid(
+    tbox::Pointer<hier::Patch<3> >& dest_patch, int& intersect_num,
+    std::vector<int>& intersect_index) {
+  std::vector<int> focused_cells_index;
+  std::vector<std::vector<int> > focused_intersect_index;
+  std::set<int> intersect_indexs;
+  impl_->gridIntersectGrid(dest_patch, focused_cells_index,
+                           focused_intersect_index, intersect_indexs, 0);
+  // 将set转化为vector
+  for (std::set<int>::iterator iter = intersect_indexs.begin();
+       iter != intersect_indexs.end(); iter++)
+    intersect_index.push_back(*iter);
+  intersect_num = intersect_indexs.size();
+}
+
+std::vector<int> GridIntersect::gridIntersectGrid(
+    tbox::Pointer<hier::Patch<3> >& dest_patch, int focused_cell_index) {
+  std::set<int> intersect_indexs;
+  std::vector<int> focused_cells_index(1, focused_cell_index);
+  std::vector<std::vector<int> > focused_intersects_index;
+  impl_->gridIntersectGrid(dest_patch, focused_cells_index,
+                           focused_intersects_index, intersect_indexs, 1);
+  return focused_intersects_index[0];
 }
 
 #endif  //  GRID_INTERSECT_CPP
