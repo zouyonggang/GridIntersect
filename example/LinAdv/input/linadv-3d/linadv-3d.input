@@ -31,8 +31,8 @@ GridGeometry {
    MeshImportationParameter{ 
       //file_name = "block_6x2x2.k"
       //file_name = "bar-tet-498.k"
-      file_name = "sub_grid_out.k"
-      //file_name = "result1_out.k"
+      //file_name = "sub_grid_out.k"
+      file_name = "result1_out.k"
       refine_times = 0
    }
 }

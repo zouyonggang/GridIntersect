@@ -55,8 +55,9 @@ public:
                         double* intersection_coordinates);
 
   /**
-   * @brief
-   * 输入目的网格片，求解源网格片与目的网格片相交的单元个数以及源源单元索引号
+   * @brief 输入目的网格片，求解源网格片与目的网格片相交的单元个数
+   * 以及源单元索引号。注：由于采用区间树算法，所以求出的结果不是
+   * 所有单元都真正相交，真正相交的网格单元只是输出集合的子集
    *
    * @param dest_patch 输入参数，目的网格片
    * @param intersect_num 输出参数，相交源网格单元个数
@@ -66,11 +67,12 @@ public:
                          int& intersect_num, std::vector<int>& intersect_index);
 
   /**
-   * @brief
-   * 输入目的网格片，以及指定单元索引号，求解与该网格单元相交的源网格单元索引
+   * @brief 输入目的网格片，以及指定单元索引号，求解与该网格单元
+   * 相交的源网格单元索引。注：由于采用区间树算法，所以求出的结果不是
+   * 所有单元都真正相交，真正相交的网格单元只是输出集合的子集
    *
    * @param dest_patch 输入参数，目的网格片
-   * @param focused_cell_index 输入参数，网格单元所以
+   * @param focused_cell_index 输入参数，目的网格单元索引
    *
    * @return std::vector<int> 输出参数，与输入网格单元相交的源网格单元索引集合
    */
