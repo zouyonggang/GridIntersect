@@ -1,3 +1,12 @@
+//
+// 文件名: GridIntersect.h
+// 软件包: JAUMIN 
+// 版权  : (c) 2004-2010 北京应用物理与计算数学研究所
+// 版本号: $Revision: 1 $
+// 修改  : $Date: 2018-10-9 13:11:58 +0800
+// 描述  : 网格相交算法类
+//
+
 #ifndef GRID_INTERSECT_H
 #define GRID_INTERSECT_H
 

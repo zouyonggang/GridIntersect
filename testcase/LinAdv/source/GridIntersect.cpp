@@ -1,5 +1,11 @@
-#ifndef GRID_INTERSECT_CPP
-#define GRID_INTERSECT_CPP
+//
+// 文件名: GridIntersect.cpp
+// 软件包: JAUMIN 
+// 版权  : (c) 2004-2010 北京应用物理与计算数学研究所
+// 版本号: $Revision: 1 $
+// 修改  : $Date: 2018-10-9 13:11:58 +0800
+// 描述  : 网格相交算法实现类
+//
 
 #include "GridIntersect.h"
 
@@ -15,9 +21,6 @@
 #include <map>
 #include <string>
 #include <unordered_map>
-
-#include <iostream>
-using namespace std;
 
 /**
  * @brief 描述一个3维结点，里面包含patch内节点编号，节点坐标
