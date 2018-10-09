@@ -192,8 +192,11 @@ public:
 #ifdef DEBUG_CHECK_ASSERTION
     assert(point1 != NULL && point2 != NULL && point0 != NULL);
 #endif
-    return ((point1[0] - point0[0]) * (point2[1] - point0[1]) -
-            (point2[0] - point0[0]) * (point1[1] - point0[1]));
+    if ((point1[0] < point0[0]) || (point1[0] - point0[0]) < delta_)
+      return ((point1[0] - point0[0]) * (point2[1] - point0[1]) -
+              (point2[0] - point0[0]) * (point1[1] - point0[1]));
+    else
+      return -1 * isLeft(point1, point0, point2);
   }
 
   /**
@@ -205,7 +208,9 @@ public:
    * @return int !=0 点在多边形内部
    *             =0 点在多边形外部
    *
-   * @note vertex要保证最后一个V[n] = V[0]
+   * @note vertex要保证最后一个V[n] =
+   * V[0]，与传统的算法相比，该算法增加了点在多边形边上
+   * 以及点在多边形顶点+x方向特殊情况的处理
    */
   int wnPnpoly(const double* point, const double* vertex, int n) {
 #ifdef DEBUG_CHECK_ASSERTION
@@ -222,22 +227,37 @@ public:
 
       if (isLeft(V, V_next, point) == 0 &&
           ((point[0] >= V[0] && point[0] <= V_next[0]) ||
-           (point[0] >= V_next[0] && point[0] <= V[0])))
-        ++wn;  // 如果该点在边上
-      else {
-        if ((V[1] - point[1]) <= 1.0e-8) {  // 输入点在线段下顶点上方
-          if ((V_next[1] - point[1]) > delta_)      // 一个向上的缠绕
-            if (isLeft(V, V_next, point) > delta_)  //  p在边的左边
-              ++wn;
-        } else {  // 输入点在线段下顶点上方
-          if ((V_next[1] - point[1]) <= 1.0e-8)     // 一个向下的缠绕
-            if (isLeft(V, V_next, point) < delta_)  //  p在边的右边
-              --wn;
+           (point[0] >= V_next[0] && point[0] <= V[0]))) {
+        wn += 2;  // 如果该点在边上
+        break;
+      } else {
+        if (V[1] < point[1]) {  // 输入点在线段第一个顶点上方
+          if (V_next[1] > point[1]) {            // 一个向上的缠绕
+            if (isLeft(V, V_next, point) > 0) {  //  p在边的左边
+              wn += 2;
+            }
+          } else if (V_next[1] == point[1]) {  //点在第二个顶点+x方向
+            wn++;
+          }
+        } else if (V[1] > point[1]) {  // 输入点在线段第一个顶点上方
+          if (V_next[1] < point[1]) {            // 一个向下的缠绕
+            if (isLeft(V, V_next, point) < 0) {  //  p在边的右边
+              wn -= 2;
+            }
+          } else if (V_next[1] == point[1]) {
+            wn--;
+          }
+        } else if (V[0] > point[0]) {
+          if (V_next[1] > point[1]) {
+            wn++;
+          } else if (V_next[1] < point[1]) {
+            wn--;
+          }
         }
       }
     }
 
-    return wn;
+    return wn / 2;
   }
 
   /**
@@ -449,21 +469,21 @@ public:
                                           point[2],
                                           point[0] * 1.0000000023879534,
                                           point[1] * 1.00000000568792345,
-                                          point[2] * 0.9999999948626578,
+                                          point[2] * 1.0000000098563214,
                                           point[0] * 0.9999999978954623,
-                                          point[1] * 0.9999999956321589,
+                                          point[1] * 1.00000000568792345,
                                           point[2] * 1.0000000098563214,
                                           point[0] * 0.9999999912356987,
-                                          point[1] * 1.0000000045698753,
+                                          point[1] * 0.9999999936985214,
                                           point[2] * 1.0000000058746895,
-                                          point[0] * 0.9999999932569874,
-                                          point[1] * 1.0000000056987425,
+                                          point[0] * 1.0000000056987425,
+                                          point[1] * 0.9999999932569874,
                                           point[2] * 1.0000000074158963,
-                                          point[0] * 0.9999999965874239,
+                                          point[0] * 1.00000000568792345,
                                           point[1] * 1.0000000065897412,
                                           point[2] * 0.9999999936985214,
-                                          point[0] * 1.0000000074258635,
-                                          point[1] * 1.0000000089632456,
+                                          point[0] * 0.9999999936985214,
+                                          point[1] * 0.9999999978954623,
                                           point[2] * 0.9999999923654789};
         for (int p = 0; p < 7; p++) {
           const double around_point[3] = {around_points[p * 3],

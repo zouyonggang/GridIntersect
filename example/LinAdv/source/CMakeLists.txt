@@ -10,7 +10,7 @@ if (NOT JAUMIN_NDIM)
   set(JAUMIN_NDIM 3)
 endif()
 if (NOT JAUMIN_CREL)
-  set(JAUMIN_CREL dbg)
+  set(JAUMIN_CREL opt)
 endif()
 
 list(APPEND CMAKE_MODULE_PATH "${JAUMIN_ROOT}/share/cmake/Modules/scns")

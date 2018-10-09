@@ -83,6 +83,10 @@ void LinAdvLevelIntegrator::initializeLevelIntegrator(
 void LinAdvLevelIntegrator::initializeLevelData(
     const tbox::Pointer<hier::BasePatchLevel<NDIM> > level,
     const double init_data_time, const bool initial_time) {
+  tbox::Pointer<hier::BasePatchLevel<NDIM> > level_temp = level;
+  hier::PatchLevel<NDIM>* patch_level = dynamic_cast<hier::PatchLevel<NDIM>*>(level_temp.getPointer());
+
+
   d_init_set_value->initializeLevelData(level, init_data_time, initial_time);
 
   // level->printClassData(tbox::plog);
